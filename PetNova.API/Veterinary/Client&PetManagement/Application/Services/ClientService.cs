@@ -17,7 +17,7 @@ public class ClientService:IClientService
     }
     private static ClientDTO MapToDto(Client c) => new()
     {
-        Id        = c.Id,           // 👈 mapear Id
+        Id        = c.Id,           
         FirstName = c.FirstName,
         LastName  = c.LastName,
         Email     = c.Email,
