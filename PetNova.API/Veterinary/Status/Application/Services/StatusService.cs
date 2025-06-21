@@ -21,7 +21,7 @@ public sealed class StatusService : IStatusService
         _uow  = uow;
     }
 
-    /* ---------- mapping ---------- */
+    
     private static StatusDTO Map(StatusEntity s) => new()
     {
         Id          = s.Id,
@@ -31,7 +31,7 @@ public sealed class StatusService : IStatusService
         IsActive    = s.IsActive
     };
 
-    /* ---------- CRUD ---------- */
+   
 
     public async Task<IEnumerable<StatusDTO>> ListAsync() =>
         (await _repo.ListAsync()).Select(Map);
