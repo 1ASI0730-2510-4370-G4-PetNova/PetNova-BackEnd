@@ -2,54 +2,61 @@
 using PetNova.API.Veterinary.ClientAndPetManagement.Application.Services;
 using PetNova.API.Veterinary.ClientAndPetManagement.Interface.DTOs;
 
-namespace PetNova.API.Veterinary.Client_PetManagement.Interfaces.Controllers;
+namespace PetNova.API.Veterinary.ClientAndPetManagement.Interfaces.Controllers;
 
+/// <summary>
+///  CRUD end‑points para los doctores de la clínica.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class DoctorsController : ControllerBase
 {
-    private readonly DoctorService _doctorService;
+    private readonly IDoctorService _service;
 
-    public DoctorsController(DoctorService doctorService)
-    {
-        _doctorService = doctorService;
-    }
+    // Inyectamos la **interfaz**, NO la clase concreta
+    public DoctorsController(IDoctorService service) => _service = service;
 
+    // ────────────────────────────────────────────────
+    // GET /api/Doctors
+    // ────────────────────────────────────────────────
     [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var doctors = await _doctorService.ListAsync();
-        return Ok(doctors);
-    }
+    public async Task<ActionResult<IEnumerable<DoctorDTO>>> GetAll()
+        => Ok(await _service.ListAsync());
 
+    // ────────────────────────────────────────────────
+    // GET /api/Doctors/{id}
+    // ────────────────────────────────────────────────
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<ActionResult<DoctorDTO>> Get(Guid id)
     {
-        var doctor = await _doctorService.GetByIdAsync(id);
-        if (doctor == null) return NotFound();
-        return Ok(doctor);
+        var dto = await _service.GetByIdAsync(id);
+        return dto is null ? NotFound() : Ok(dto);
     }
 
+    // ────────────────────────────────────────────────
+    // POST /api/Doctors
+    // ────────────────────────────────────────────────
     [HttpPost]
-    public async Task<IActionResult> Create(DoctorDTO doctorDto)
+    public async Task<ActionResult<DoctorDTO>> Create([FromBody] DoctorDTO dto)
     {
-        var doctor = await _doctorService.CreateAsync(doctorDto);
-        return CreatedAtAction(nameof(GetById), new { id = doctor.Id }, doctor);
+        var created = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
+    // ────────────────────────────────────────────────
+    // PUT /api/Doctors/{id}
+    // ────────────────────────────────────────────────
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, DoctorDTO doctorDto)
+    public async Task<ActionResult<DoctorDTO>> Update(Guid id, [FromBody] DoctorDTO dto)
     {
-        var doctor = await _doctorService.UpdateAsync(id, doctorDto);
-        if (doctor == null) return NotFound();
-        return Ok(doctor);
+        var updated = await _service.UpdateAsync(id, dto);
+        return updated is null ? NotFound() : Ok(updated);
     }
 
+    // ────────────────────────────────────────────────
+    // DELETE /api/Doctors/{id}
+    // ────────────────────────────────────────────────
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
-    {
-        var result = await _doctorService.DeleteAsync(id);
-        if (!result) return NotFound();
-        return NoContent();
-    }
+        => await _service.DeleteAsync(id) ? NoContent() : NotFound();
 }

@@ -1,77 +1,87 @@
-﻿using PetNova.API.Shared.Domain.Repository;
-using PetNova.API.Veterinary.Status.Domain.Model.Aggregate;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+using PetNova.API.Shared.Domain.Repository;
 using PetNova.API.Veterinary.Status.Interface.DTOs;
+
+// 👇 Alias que fuerza a usar la clase correcta
+using StatusEntity = PetNova.API.Veterinary.Status.Domain.Model.Aggregate.Status;
 
 namespace PetNova.API.Veterinary.Status.Application.Services;
 
-public abstract class StatusService
+public sealed class StatusService : IStatusService
 {
-    private readonly IRepository<Domain.Model.Aggregate.Status, Guid> _statusRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IRepository<StatusEntity, Guid> _repo;
+    private readonly IUnitOfWork                     _uow;
 
-    public StatusService(IRepository<Domain.Model.Aggregate.Status, Guid> statusRepository, IUnitOfWork unitOfWork)
+    public StatusService(IRepository<StatusEntity, Guid> repo, IUnitOfWork uow)
     {
-        _statusRepository = statusRepository;
-        _unitOfWork = unitOfWork;
+        _repo = repo;
+        _uow  = uow;
     }
 
-    public async Task<IEnumerable<Domain.Model.Aggregate.Status>> ListAsync()
+    /* ---------- mapping ---------- */
+    private static StatusDTO Map(StatusEntity s) => new()
     {
-        return await _statusRepository.ListAsync();
-    }
+        Id          = s.Id,
+        Name        = s.Name,
+        Description = s.Description,
+        Type        = s.Type,
+        IsActive    = s.IsActive
+    };
 
-    public async Task<IEnumerable<Domain.Model.Aggregate.Status>> ListByTypeAsync(string type)
-    {
-        var allStatuses = await _statusRepository.ListAsync();
-        return allStatuses.Where(s => s.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
-    }
+    /* ---------- CRUD ---------- */
 
-    public async Task<Domain.Model.Aggregate.Status?> GetByIdAsync(Guid id)
-    {
-        return await _statusRepository.FindByIdAsync(id);
-    }
+    public async Task<IEnumerable<StatusDTO>> ListAsync() =>
+        (await _repo.ListAsync()).Select(Map);
 
-    public async Task<Domain.Model.Aggregate.Status> CreateAsync(StatusDTO statusDto)
+    public async Task<IEnumerable<StatusDTO>> ListByTypeAsync(string type) =>
+        (await _repo.ListAsync())
+        .Where(s => s.Type.Equals(type, StringComparison.OrdinalIgnoreCase))
+        .Select(Map);
+
+    public async Task<StatusDTO?> GetByIdAsync(Guid id) =>
+        (await _repo.FindByIdAsync(id)) is { } s ? Map(s) : null;
+
+    public async Task<StatusDTO> CreateAsync(StatusDTO dto)
     {
-        var status = new Domain.Model.Aggregate.Status
+        var s = new StatusEntity
         {
-            Name = statusDto.Name,
-            Description = statusDto.Description,
-            Type = statusDto.Type,
-            IsActive = statusDto.IsActive
+            Name        = dto.Name,
+            Description = dto.Description,
+            Type        = dto.Type,
+            IsActive    = dto.IsActive
         };
-        
-        await _statusRepository.AddAsync(status);
-        await _unitOfWork.CompleteAsync();
-        
-        return status;
+        await _repo.AddAsync(s);
+        await _uow.CompleteAsync();
+        return Map(s);
     }
 
-    public async Task<Domain.Model.Aggregate.Status?> UpdateAsync(Guid id, StatusDTO statusDto)
+    public async Task<StatusDTO?> UpdateAsync(Guid id, StatusDTO dto)
     {
-        var existingStatus = await _statusRepository.FindByIdAsync(id);
-        if (existingStatus == null) return null;
+        var s = await _repo.FindByIdAsync(id);
+        if (s is null) return null;
 
-        existingStatus.Name = statusDto.Name;
-        existingStatus.Description = statusDto.Description;
-        existingStatus.Type = statusDto.Type;
-        existingStatus.IsActive = statusDto.IsActive;
-        existingStatus.UpdatedAt = DateTime.UtcNow;
+        s.Name        = dto.Name;
+        s.Description = dto.Description;
+        s.Type        = dto.Type;
+        s.IsActive    = dto.IsActive;
+        s.UpdatedAt   = DateTime.UtcNow;
 
-        _statusRepository.Update(existingStatus);
-        await _unitOfWork.CompleteAsync();
-        
-        return existingStatus;
+        _repo.Update(s);
+        await _uow.CompleteAsync();
+        return Map(s);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var status = await _statusRepository.FindByIdAsync(id);
-        if (status == null) return false;
+        var s = await _repo.FindByIdAsync(id);
+        if (s is null) return false;
 
-        _statusRepository.Remove(status);
-        await _unitOfWork.CompleteAsync();
-        
+        _repo.Remove(s);
+        await _uow.CompleteAsync();
         return true;
     }
 }

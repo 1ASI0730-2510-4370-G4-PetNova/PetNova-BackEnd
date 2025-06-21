@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\usuario\\Downloads\\LUC\\Final Final\\Pet-Nova\\Pet-Nova\\PetNova.API\\PetNova.API.csproj": {}
+    "C:\\Users\\Diego Bastidas\\Desktop\\Pet nova final\\PetNova.API\\PetNova.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\usuario\\Downloads\\LUC\\Final Final\\Pet-Nova\\Pet-Nova\\PetNova.API\\PetNova.API.csproj": {
+    "C:\\Users\\Diego Bastidas\\Desktop\\Pet nova final\\PetNova.API\\PetNova.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\usuario\\Downloads\\LUC\\Final Final\\Pet-Nova\\Pet-Nova\\PetNova.API\\PetNova.API.csproj",
+        "projectUniqueName": "C:\\Users\\Diego Bastidas\\Desktop\\Pet nova final\\PetNova.API\\PetNova.API.csproj",
         "projectName": "PetNova.API",
-        "projectPath": "C:\\Users\\usuario\\Downloads\\LUC\\Final Final\\Pet-Nova\\Pet-Nova\\PetNova.API\\PetNova.API.csproj",
-        "packagesPath": "C:\\Users\\usuario\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\usuario\\Downloads\\LUC\\Final Final\\Pet-Nova\\Pet-Nova\\PetNova.API\\obj\\",
+        "projectPath": "C:\\Users\\Diego Bastidas\\Desktop\\Pet nova final\\PetNova.API\\PetNova.API.csproj",
+        "packagesPath": "C:\\Users\\Diego Bastidas\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Diego Bastidas\\Desktop\\Pet nova final\\PetNova.API\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Diego Bastidas\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -74,6 +68,10 @@
               "target": "Package",
               "version": "[9.0.6, )"
             },
+            "Microsoft.Extensions.Identity.Core": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
             "Pomelo.EntityFrameworkCore.MySql": {
               "target": "Package",
               "version": "[9.0.0-preview.2.efcore.9.0.0, )"
@@ -106,7 +104,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Users\\usuario\\.dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Users\\Diego Bastidas\\.dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

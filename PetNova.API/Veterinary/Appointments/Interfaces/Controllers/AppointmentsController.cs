@@ -6,64 +6,34 @@ namespace PetNova.API.Veterinary.Appointments.Interfaces.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AppointmentsController : ControllerBase
+public sealed class AppointmentsController(IAppointmentService svc) : ControllerBase
 {
-    private readonly AppointmentService _appointmentService;
+    [HttpGet] public async Task<ActionResult<IEnumerable<AppointmentDTO>>> GetAll()
+        => Ok(await svc.ListAsync());
 
-    public AppointmentsController(AppointmentService appointmentService)
-    {
-        _appointmentService = appointmentService;
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var appointments = await _appointmentService.ListAsync();
-        return Ok(appointments);
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var appointment = await _appointmentService.GetByIdAsync(id);
-        if (appointment == null) return NotFound();
-        return Ok(appointment);
-    }
+    [HttpGet("{id:guid}")] public async Task<ActionResult<AppointmentDTO>> Get(Guid id)
+        => (await svc.GetByIdAsync(id)) is { } dto ? Ok(dto) : NotFound();
 
     [HttpGet("pet/{petId:guid}")]
-    public async Task<IActionResult> GetByPetId(Guid petId)
-    {
-        var appointments = await _appointmentService.GetByPetIdAsync(petId);
-        return Ok(appointments);
-    }
+    public async Task<ActionResult<IEnumerable<AppointmentDTO>>> ByPet(Guid petId)
+        => Ok(await svc.GetByPetIdAsync(petId));
 
     [HttpGet("doctor/{doctorId:guid}")]
-    public async Task<IActionResult> GetByDoctorId(Guid doctorId)
-    {
-        var appointments = await _appointmentService.GetByDoctorIdAsync(doctorId);
-        return Ok(appointments);
-    }
+    public async Task<ActionResult<IEnumerable<AppointmentDTO>>> ByDoctor(Guid doctorId)
+        => Ok(await svc.GetByDoctorIdAsync(doctorId));
 
     [HttpPost]
-    public async Task<IActionResult> Create(AppointmentDto appointmentDto)
+    public async Task<ActionResult<AppointmentDTO>> Create([FromBody] AppointmentDTO dto)
     {
-        var appointment = await _appointmentService.CreateAsync(appointmentDto);
-        return CreatedAtAction(nameof(GetById), new { id = appointment.Id }, appointment);
+        var created = await svc.CreateAsync(dto);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, AppointmentDto appointmentDto)
-    {
-        var appointment = await _appointmentService.UpdateAsync(id, appointmentDto);
-        if (appointment == null) return NotFound();
-        return Ok(appointment);
-    }
+    public async Task<ActionResult<AppointmentDTO>> Update(Guid id, [FromBody] AppointmentDTO dto)
+        => (await svc.UpdateAsync(id, dto)) is { } upd ? Ok(upd) : NotFound();
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
-    {
-        var result = await _appointmentService.DeleteAsync(id);
-        if (!result) return NotFound();
-        return NoContent();
-    }
+        => await svc.DeleteAsync(id) ? NoContent() : NotFound();
 }

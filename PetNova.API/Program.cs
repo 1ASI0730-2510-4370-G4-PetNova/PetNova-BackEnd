@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
+using Microsoft.AspNetCore.Identity;   
 using PetNova.API.Shared.Application.Services;
 using PetNova.API.Shared.Domain.Repository;
 using PetNova.API.Shared.Infrastructure.Persistence.EFC.Configuration;
@@ -15,7 +15,9 @@ using PetNova.API.Veterinary.ClientAndPetManagement.Application.Services;
 using PetNova.API.Veterinary.Appointments.Application.Services;
 using PetNova.API.Veterinary.IAM.Application.Services;
 using PetNova.API.Veterinary.MedicalHistory.Application.Services;
+using PetNova.API.Veterinary.IAM.Domain.Model.Aggregate;   // ← aquí está User
 using PetNova.API.Veterinary.Status.Application.Services;
+using JwtTokenService = PetNova.API.Shared.Infrastructure.Services.JwtTokenService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,13 +26,14 @@ var builder = WebApplication.CreateBuilder(args);
 // ───────────────────────────────────────────────
 
 // Domain services (DI)
-//builder.Services.AddScoped<PetService>();
-//builder.Services.AddScoped<AppointmentService>();
+builder.Services.AddScoped<IPetService   , PetService>();
 builder.Services.AddScoped<IClientService, ClientService>();
-//builder.Services.AddScoped<DoctorService>();
-//builder.Services.AddScoped<AuthService>();
-//builder.Services.AddScoped<MedicalRecordService>();
-//builder.Services.AddScoped<StatusService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
+builder.Services.AddScoped<IStatusService, StatusService>();  
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+
 
 // Generic repository & UoW
 builder.Services.AddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
@@ -53,6 +56,33 @@ builder.Services.AddSwaggerGen(opt =>
         Version     = "v1",
         Description = "PetNova veterinary management API"
     });
+    
+
+    // 🔐 Configuración para habilitar botón "Authorize" con JWT
+    opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Introduce el token JWT con el prefijo 'Bearer '.\n\nEjemplo: Bearer eyJhbGci...xyz"
+    });
+
+    opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });    
 });
 
 // ───────────────────────────────────────────────

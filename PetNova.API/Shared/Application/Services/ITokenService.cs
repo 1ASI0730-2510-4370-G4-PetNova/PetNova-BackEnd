@@ -1,7 +1,5 @@
-﻿using System.Security.Claims;
+﻿namespace PetNova.API.Shared.Application.Services;
 using PetNova.API.Veterinary.IAM.Domain.Model.Aggregate;
-
-namespace PetNova.API.Shared.Application.Services;
 
 public interface ITokenService
 {

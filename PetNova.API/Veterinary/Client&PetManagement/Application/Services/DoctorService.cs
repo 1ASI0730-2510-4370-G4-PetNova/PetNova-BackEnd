@@ -4,72 +4,79 @@ using PetNova.API.Veterinary.ClientAndPetManagement.Interface.DTOs;
 
 namespace PetNova.API.Veterinary.ClientAndPetManagement.Application.Services;
 
-public class DoctorService
+public class DoctorService : IDoctorService
 {
-    private readonly IRepository<Doctor, Guid> _doctorRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IRepository<Doctor, Guid> _repo;
+    private readonly IUnitOfWork               _uow;
 
-    public DoctorService(IRepository<Doctor, Guid> doctorRepository, IUnitOfWork unitOfWork)
+    public DoctorService(IRepository<Doctor, Guid> repo, IUnitOfWork uow)
     {
-        _doctorRepository = doctorRepository;
-        _unitOfWork = unitOfWork;
+        _repo = repo;
+        _uow  = uow;
     }
 
-    public async Task<IEnumerable<Doctor>> ListAsync()
+    // ----------  Mapping helpers ----------
+    private static DoctorDTO MapToDto(Doctor d) => new()
     {
-        return await _doctorRepository.ListAsync();
+        Id             = d.Id,
+        FirstName      = d.FirstName,
+        LastName       = d.LastName,
+        Specialization = d.Specialization,
+        LicenseNumber  = d.LicenseNumber,
+        Email          = d.Email,
+        Phone          = d.Phone
+    };
+
+    private static void MapFromDto(Doctor d, DoctorDTO dto)
+    {
+        d.FirstName      = dto.FirstName;
+        d.LastName       = dto.LastName;
+        d.Specialization = dto.Specialization;
+        d.LicenseNumber  = dto.LicenseNumber;
+        d.Email          = dto.Email;
+        d.Phone          = dto.Phone;
     }
 
-    public async Task<Doctor?> GetByIdAsync(Guid id)
+    // ----------  Queries ----------
+    public async Task<IEnumerable<DoctorDTO>> ListAsync() =>
+        (await _repo.ListAsync()).Select(MapToDto);
+
+    public async Task<DoctorDTO?> GetByIdAsync(Guid id) =>
+        (await _repo.FindByIdAsync(id)) is { } d ? MapToDto(d) : null;
+
+    // ----------  Commands ----------
+    public async Task<DoctorDTO> CreateAsync(DoctorDTO dto)
     {
-        return await _doctorRepository.FindByIdAsync(id);
+        var entity = new Doctor();
+        MapFromDto(entity, dto);
+
+        await _repo.AddAsync(entity);
+        await _uow.CompleteAsync();
+
+        return MapToDto(entity);
     }
 
-    public async Task<Doctor> CreateAsync(DoctorDTO doctorDto)
+    public async Task<DoctorDTO?> UpdateAsync(Guid id, DoctorDTO dto)
     {
-        var doctor = new Doctor
-        {
-            FirstName = doctorDto.FirstName,
-            LastName = doctorDto.LastName,
-            Specialization = doctorDto.Specialization,
-            LicenseNumber = doctorDto.LicenseNumber,
-            Email = doctorDto.Email,
-            Phone = doctorDto.Phone
-        };
-        
-        await _doctorRepository.AddAsync(doctor);
-        await _unitOfWork.CompleteAsync();
-        
-        return doctor;
-    }
+        var entity = await _repo.FindByIdAsync(id);
+        if (entity is null) return null;
 
-    public async Task<Doctor?> UpdateAsync(Guid id, DoctorDTO doctorDto)
-    {
-        var existingDoctor = await _doctorRepository.FindByIdAsync(id);
-        if (existingDoctor == null) return null;
+        MapFromDto(entity, dto);
+        entity.UpdatedAt = DateTime.UtcNow;
 
-        existingDoctor.FirstName = doctorDto.FirstName;
-        existingDoctor.LastName = doctorDto.LastName;
-        existingDoctor.Specialization = doctorDto.Specialization;
-        existingDoctor.LicenseNumber = doctorDto.LicenseNumber;
-        existingDoctor.Email = doctorDto.Email;
-        existingDoctor.Phone = doctorDto.Phone;
-        existingDoctor.UpdatedAt = DateTime.UtcNow;
+        _repo.Update(entity);
+        await _uow.CompleteAsync();
 
-        _doctorRepository.Update(existingDoctor);
-        await _unitOfWork.CompleteAsync();
-        
-        return existingDoctor;
+        return MapToDto(entity);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var doctor = await _doctorRepository.FindByIdAsync(id);
-        if (doctor == null) return false;
+        var entity = await _repo.FindByIdAsync(id);
+        if (entity is null) return false;
 
-        _doctorRepository.Remove(doctor);
-        await _unitOfWork.CompleteAsync();
-        
+        _repo.Remove(entity);
+        await _uow.CompleteAsync();
         return true;
     }
 }

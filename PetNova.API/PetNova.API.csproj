@@ -15,6 +15,7 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6" />
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0-preview.2.efcore.9.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.0" />
+        <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.6" />
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.1" />
         
     </ItemGroup>
@@ -22,11 +23,9 @@
     <ItemGroup>
         <Folder Include="Veterinary\Appointments\Infrastruture\Repositories\" />
         <Folder Include="Veterinary\Client&amp;PetManagement\Infrastruture\Repositories\" />
-        <Folder Include="Veterinary\ClientAndPetManagement\Interface\DTOs\" />
         <Folder Include="Veterinary\MedicalHistory\Infrastruture\Repositories\" />
         <Folder Include="Veterinary\MedicalHistory\Interfaces\" />
         <Folder Include="Veterinary\Status\Infrastruture\" />
-        <Folder Include="Veterinary\Status\Interfaces\" />
     </ItemGroup>
 
 </Project>

@@ -6,57 +6,32 @@ namespace PetNova.API.Veterinary.Status.Interface.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class StatusController : ControllerBase
+public sealed class StatusController(IStatusService service) : ControllerBase
 {
-    private readonly StatusService _statusService;
-
-    public StatusController(StatusService statusService)
-    {
-        _statusService = statusService;
-    }
-
     [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var statuses = await _statusService.ListAsync();
-        return Ok(statuses);
-    }
+    public async Task<ActionResult<IEnumerable<StatusDTO>>> GetAll()
+        => Ok(await service.ListAsync());
 
     [HttpGet("type/{type}")]
-    public async Task<IActionResult> GetByType(string type)
-    {
-        var statuses = await _statusService.ListByTypeAsync(type);
-        return Ok(statuses);
-    }
+    public async Task<ActionResult<IEnumerable<StatusDTO>>> GetByType(string type)
+        => Ok(await service.ListByTypeAsync(type));
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var status = await _statusService.GetByIdAsync(id);
-        if (status == null) return NotFound();
-        return Ok(status);
-    }
+    public async Task<ActionResult<StatusDTO>> GetById(Guid id)
+        => (await service.GetByIdAsync(id)) is { } dto ? Ok(dto) : NotFound();
 
     [HttpPost]
-    public async Task<IActionResult> Create(StatusDTO statusDto)
+    public async Task<ActionResult<StatusDTO>> Create([FromBody] StatusDTO dto)
     {
-        var status = await _statusService.CreateAsync(statusDto);
-        return CreatedAtAction(nameof(GetById), new { id = status.Id }, status);
+        var created = await service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, StatusDTO statusDto)
-    {
-        var status = await _statusService.UpdateAsync(id, statusDto);
-        if (status == null) return NotFound();
-        return Ok(status);
-    }
+    public async Task<ActionResult<StatusDTO>> Update(Guid id, [FromBody] StatusDTO dto)
+        => (await service.UpdateAsync(id, dto)) is { } upd ? Ok(upd) : NotFound();
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
-    {
-        var result = await _statusService.DeleteAsync(id);
-        if (!result) return NotFound();
-        return NoContent();
-    }
+        => await service.DeleteAsync(id) ? NoContent() : NotFound();
 }

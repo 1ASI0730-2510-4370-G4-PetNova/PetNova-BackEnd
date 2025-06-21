@@ -1,94 +1,108 @@
-﻿using PetNova.API.Shared.Domain.Repository;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+using PetNova.API.Shared.Domain.Repository;
 using PetNova.API.Veterinary.Appointments.Domain.Model.Aggregate;
 using PetNova.API.Veterinary.Appointments.Interfaces.DTOs;
 using PetNova.API.Veterinary.ClientAndPetManagement.Domain.Model.Aggregate;
 
 namespace PetNova.API.Veterinary.Appointments.Application.Services;
 
-public class AppointmentService
+public sealed class AppointmentService : IAppointmentService
 {
-    private readonly IRepository<Appointment, Guid> _appointmentRepository;
-    private readonly IRepository<Pet, Guid> _petRepository;
-    private readonly IRepository<Doctor, Guid> _doctorRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IRepository<Appointment, Guid> _repo;
+    private readonly IRepository<Pet, Guid>         _pets;
+    private readonly IRepository<Doctor, Guid>      _doctors;
+    private readonly IUnitOfWork                    _uow;
 
     public AppointmentService(
-        IRepository<Appointment, Guid> appointmentRepository,
-        IRepository<Pet, Guid> petRepository,
-        IRepository<Doctor, Guid> doctorRepository,
-        IUnitOfWork unitOfWork)
+        IRepository<Appointment, Guid> repo,
+        IRepository<Pet, Guid>         pets,
+        IRepository<Doctor, Guid>      doctors,
+        IUnitOfWork                    uow)
     {
-        _appointmentRepository = appointmentRepository;
-        _petRepository = petRepository;
-        _doctorRepository = doctorRepository;
-        _unitOfWork = unitOfWork;
+        _repo    = repo;
+        _pets    = pets;
+        _doctors = doctors;
+        _uow     = uow;
     }
 
-    public async Task<IEnumerable<Appointment>> ListAsync()
+    /* ---------- mapping ---------- */
+    private static AppointmentDTO Map(Appointment a) => new()
     {
-        return await _appointmentRepository.ListAsync();
-    }
+        Id              = a.Id,
+        AppointmentDate = a.AppointmentDate,
+        Reason          = a.Reason,
+        Status          = a.Status,
+        Notes           = a.Notes,
+        PetId           = a.PetId,
+        DoctorId        = a.DoctorId
+    };
 
-    public async Task<Appointment?> GetByIdAsync(Guid id)
-    {
-        return await _appointmentRepository.FindByIdAsync(id);
-    }
+    /* ---------- CRUD ---------- */
 
-    public async Task<IEnumerable<Appointment>> GetByPetIdAsync(Guid petId)
-    {
-        var pet = await _petRepository.FindByIdAsync(petId);
-        return pet?.Appointments ?? Enumerable.Empty<Appointment>();
-    }
+    public async Task<IEnumerable<AppointmentDTO>> ListAsync() =>
+        (await _repo.ListAsync()).Select(Map);
 
-    public async Task<IEnumerable<Appointment>> GetByDoctorIdAsync(Guid doctorId)
-    {
-        var doctor = await _doctorRepository.FindByIdAsync(doctorId);
-        return doctor?.Appointments ?? Enumerable.Empty<Appointment>();
-    }
+    public async Task<AppointmentDTO?> GetByIdAsync(Guid id) =>
+        (await _repo.FindByIdAsync(id)) is { } a ? Map(a) : null;
 
-    public async Task<Appointment> CreateAsync(AppointmentDto appointmentDto)
+    public async Task<IEnumerable<AppointmentDTO>> GetByPetIdAsync(Guid petId) =>
+        (await _repo.ListAsync())
+        .Where(a => a.PetId == petId)
+        .Select(Map);
+
+    public async Task<IEnumerable<AppointmentDTO>> GetByDoctorIdAsync(Guid doctorId) =>
+        (await _repo.ListAsync())
+        .Where(a => a.DoctorId == doctorId)
+        .Select(Map);
+
+    public async Task<AppointmentDTO> CreateAsync(AppointmentDTO dto)
     {
-        var appointment = new Appointment
+        // Validar claves foráneas
+        if (!await _pets.Exists(dto.PetId) || !await _doctors.Exists(dto.DoctorId))
+            throw new InvalidOperationException("PetId o DoctorId no existen.");
+
+        var a = new Appointment
         {
-            AppointmentDate = appointmentDto.AppointmentDate,
-            Reason = appointmentDto.Reason,
-            Status = appointmentDto.Status,
-            Notes = appointmentDto.Notes,
-            PetId = appointmentDto.PetId,
-            DoctorId = appointmentDto.DoctorId
+            AppointmentDate = dto.AppointmentDate,
+            Reason          = dto.Reason,
+            Status          = dto.Status,
+            Notes           = dto.Notes,
+            PetId           = dto.PetId,
+            DoctorId        = dto.DoctorId
         };
-        
-        await _appointmentRepository.AddAsync(appointment);
-        await _unitOfWork.CompleteAsync();
-        
-        return appointment;
+
+        await _repo.AddAsync(a);
+        await _uow.CompleteAsync();
+        return Map(a);
     }
 
-    public async Task<Appointment?> UpdateAsync(Guid id, AppointmentDto appointmentDto)
+    public async Task<AppointmentDTO?> UpdateAsync(Guid id, AppointmentDTO dto)
     {
-        var existingAppointment = await _appointmentRepository.FindByIdAsync(id);
-        if (existingAppointment == null) return null;
+        var a = await _repo.FindByIdAsync(id);
+        if (a is null) return null;
 
-        existingAppointment.AppointmentDate = appointmentDto.AppointmentDate;
-        existingAppointment.Reason = appointmentDto.Reason;
-        existingAppointment.Status = appointmentDto.Status;
-        existingAppointment.Notes = appointmentDto.Notes;
-        existingAppointment.UpdatedAt = DateTime.UtcNow;
+        a.AppointmentDate = dto.AppointmentDate;
+        a.Reason          = dto.Reason;
+        a.Status          = dto.Status;
+        a.Notes           = dto.Notes;
+        a.UpdatedAt       = DateTime.UtcNow;
 
-        _appointmentRepository.Update(existingAppointment);
-        await _unitOfWork.CompleteAsync();
-        
-        return existingAppointment;
+        _repo.Update(a);
+        await _uow.CompleteAsync();
+        return Map(a);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var appointment = await _appointmentRepository.FindByIdAsync(id);
-        if (appointment == null) return false;
+        var a = await _repo.FindByIdAsync(id);
+        if (a is null) return false;
 
-        _appointmentRepository.Remove(appointment);
-        await _unitOfWork.CompleteAsync();
-        
+        _repo.Remove(a);
+        await _uow.CompleteAsync();
         return true;
     }
 }

@@ -11,55 +11,47 @@ namespace PetNova.API.Veterinary.IAM.Interface.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
-    private readonly ITokenService _tokenService;
+    private readonly AuthService   _auth;
+    private readonly ITokenService _tokens;
 
-    public AuthController(AuthService authService, ITokenService tokenService)
+    public AuthController(AuthService auth, ITokenService tokens)
     {
-        _authService = authService;
-        _tokenService = tokenService;
+        _auth   = auth;
+        _tokens = tokens;
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterDTO registerDto)
+    public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
     {
-        var user = await _authService.RegisterAsync(registerDto);
-        if (user == null) 
-            return BadRequest("Username or email already exists");
+        var user = await _auth.RegisterAsync(dto);
+        if (user is null) return BadRequest(new { message = "Username or email already exists." });
 
-        var token = _tokenService.GenerateToken(user);
+        var token = _tokens.GenerateToken(user);
         return Ok(new { user, token });
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDTO loginDto)
+    public async Task<IActionResult> Login([FromBody] LoginDTO dto)
     {
-        var user = await _authService.AuthenticateAsync(loginDto);
-        if (user == null)
-            return Unauthorized("Invalid credentials");
+        var user = await _auth.AuthenticateAsync(dto);
+        if (user is null) return Unauthorized(new { message = "Invalid credentials." });
 
-        var token = _tokenService.GenerateToken(user);
+        var token = _tokens.GenerateToken(user);
         return Ok(new { user, token });
     }
 
     [Authorize(Roles = "Admin")]
     [HttpGet("users")]
-    public async Task<IActionResult> GetAllUsers()
-    {
-        var users = await _authService.ListUsersAsync();
-        return Ok(users);
-    }
+    public async Task<IActionResult> Users() => Ok(await _auth.ListUsersAsync());
 
     [Authorize]
     [HttpGet("me")]
-    public async Task<IActionResult> GetCurrentUser()
+    public async Task<IActionResult> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null) return Unauthorized();
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (id is null) return Unauthorized();
 
-        var user = await _authService.GetUserByIdAsync(Guid.Parse(userId));
-        if (user == null) return NotFound();
-
-        return Ok(user);
+        var user = await _auth.GetUserByIdAsync(Guid.Parse(id));
+        return user is null ? NotFound() : Ok(user);
     }
 }

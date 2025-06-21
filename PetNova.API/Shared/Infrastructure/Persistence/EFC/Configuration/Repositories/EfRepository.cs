@@ -21,4 +21,5 @@ public class EfRepository<TEntity, TId> : IRepository<TEntity, TId> where TEntit
     public void Update(TEntity entity) => _dbSet.Update(entity);
     public void Remove(TEntity entity) => _dbSet.Remove(entity);
     public async Task<bool> Exists(TId id) => await _dbSet.FindAsync(id) != null;
+    
 }
