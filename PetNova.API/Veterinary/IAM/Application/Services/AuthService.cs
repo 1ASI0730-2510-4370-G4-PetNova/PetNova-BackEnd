@@ -21,27 +21,37 @@ public class AuthService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<User?> RegisterAsync(RegisterDTO registerDto)
+// Registers a new user asynchronously
+public async Task<User?> RegisterAsync(RegisterDTO registerDto)
+{
+    // Check if a user with the same username or email already exists
+    var existingUser = (await _userRepository.ListAsync())
+        .FirstOrDefault(u => u.Username == registerDto.Username || u.Email == registerDto.Email);
+    
+    // If the user already exists, return null
+    if (existingUser != null) return null;
+
+    // Create a new User object from the registration data
+    var user = new User
     {
-        var existingUser = (await _userRepository.ListAsync())
-            .FirstOrDefault(u => u.Username == registerDto.Username || u.Email == registerDto.Email);
-        
-        if (existingUser != null) return null;
+        Username = registerDto.Username,
+        Email = registerDto.Email,
+        Role = registerDto.Role ?? "User" // Default to "User" role if not provided
+    };
 
-        var user = new User
-        {
-            Username = registerDto.Username,
-            Email = registerDto.Email,
-            Role = registerDto.Role ?? "User"
-        };
+    // Hash the user's password before saving
+    user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
+    
+    // Add the new user to the repository
+    await _userRepository.AddAsync(user);
 
-        user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
-        
-        await _userRepository.AddAsync(user);
-        await _unitOfWork.CompleteAsync();
-        
-        return user;
-    }
+    // Commit changes to the unit of work (database transaction)
+    await _unitOfWork.CompleteAsync();
+    
+    // Return the created user object
+    return user;
+}
+
 
     public async Task<User?> AuthenticateAsync(LoginDTO loginDto)
     {
