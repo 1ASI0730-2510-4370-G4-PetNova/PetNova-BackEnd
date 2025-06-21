@@ -45,7 +45,7 @@ public class MedicalRecordService(
     
         return medicalRecord;
     }
-} // <-- Cierre de la clase MedicalRecordService
+} 
 
 public class MedicalRecordDto
 {
