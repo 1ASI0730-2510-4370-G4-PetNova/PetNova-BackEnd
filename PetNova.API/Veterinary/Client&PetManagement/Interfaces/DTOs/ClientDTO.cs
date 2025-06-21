@@ -2,7 +2,7 @@
 
 public class ClientDTO
 {
-    public Guid   Id        { get; set; }   // 👈 nuevo
+    public Guid   Id        { get; set; }   
     public string FirstName { get; set; } = default!;
     public string LastName  { get; set; } = default!;
     public string Email     { get; set; } = default!;
