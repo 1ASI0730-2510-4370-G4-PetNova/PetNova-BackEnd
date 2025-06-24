@@ -13,20 +13,15 @@ public class ClientsController : ControllerBase
 {
     private readonly IClientService _clientService;
 
-    // ⬅️ Inyectamos *la interfaz*, no la implementación
     public ClientsController(IClientService clientService)
         => _clientService = clientService;
 
-    // ────────────────────────────────────────────────
     // GET /api/Clients
-    // ────────────────────────────────────────────────
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ClientDTO>>> GetAll()
         => Ok(await _clientService.ListAsync());
 
-    // ────────────────────────────────────────────────
     // GET /api/Clients/{id}
-    // ────────────────────────────────────────────────
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ClientDTO>> GetById(Guid id)
     {
@@ -34,9 +29,7 @@ public class ClientsController : ControllerBase
         return dto is null ? NotFound() : Ok(dto);
     }
 
-    // ────────────────────────────────────────────────
     // POST /api/Clients
-    // ────────────────────────────────────────────────
     [HttpPost]
     public async Task<ActionResult<ClientDTO>> Create([FromBody] ClientDTO dto)
     {
@@ -47,9 +40,7 @@ public class ClientsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    // ────────────────────────────────────────────────
     // PUT /api/Clients/{id}
-    // ────────────────────────────────────────────────
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ClientDTO>> Update(Guid id, [FromBody] ClientDTO dto)
     {
@@ -57,9 +48,7 @@ public class ClientsController : ControllerBase
         return updated is null ? NotFound() : Ok(updated);
     }
 
-    // ────────────────────────────────────────────────
     // DELETE /api/Clients/{id}
-    // ────────────────────────────────────────────────
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
         => await _clientService.DeleteAsync(id) ? NoContent() : NotFound();
