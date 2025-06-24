@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using PetNova.API.Shared.Domain.Repository;
 using PetNova.API.Veterinary.Status.Interface.DTOs;
 
-// 👇 Alias que fuerza a usar la clase correcta
 using StatusEntity = PetNova.API.Veterinary.Status.Domain.Model.Aggregate.Status;
 
 namespace PetNova.API.Veterinary.Status.Application.Services;
