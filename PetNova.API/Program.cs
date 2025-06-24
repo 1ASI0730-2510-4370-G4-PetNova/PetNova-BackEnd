@@ -21,11 +21,7 @@ using JwtTokenService = PetNova.API.Shared.Infrastructure.Services.JwtTokenServi
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ───────────────────────────────────────────────
-// 1️⃣  REGISTER SERVICES
-// ───────────────────────────────────────────────
 
-// Domain services (DI)
 builder.Services.AddScoped<IPetService   , PetService>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
@@ -35,11 +31,9 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
 
-// Generic repository & UoW
 builder.Services.AddScoped(typeof(IRepository<,>), typeof(EfRepository<,>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// JWT token service (scoped para evitar singleton‑state)
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
 // Controllers
@@ -58,7 +52,6 @@ builder.Services.AddSwaggerGen(opt =>
     });
     
 
-    // 🔐 Configuración para habilitar botón "Authorize" con JWT
     opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -85,9 +78,7 @@ builder.Services.AddSwaggerGen(opt =>
     });    
 });
 
-// ───────────────────────────────────────────────
-// 2️⃣  DATABASE CONTEXT
-// ───────────────────────────────────────────────
+//  DATABASE CONTEXT
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
               ?? throw new InvalidOperationException("Connection string not found");
 
@@ -101,9 +92,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.LogTo(Console.WriteLine, LogLevel.Information);
 });
 
-// ───────────────────────────────────────────────
-// 3️⃣  AUTHENTICATION & AUTHORIZATION
-// ───────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -123,28 +111,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// ───────────────────────────────────────────────
-// 4️⃣  BUILD APP
-// ───────────────────────────────────────────────
 var app = builder.Build();
 
-// Global exception page in Dev
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 
-// Swagger always available
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// HTTPS & routing
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// ───────────────────────────────────────────────
-// 5️⃣  MIGRATIONS & SEED
-// ───────────────────────────────────────────────
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
